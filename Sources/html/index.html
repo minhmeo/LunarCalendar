@@ -2,25 +2,24 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Tạo file .ical từ ngày âm lịch</title>
-    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.min.js"></script>
+    <title>Lunar Calendar to iCal (.ics)</title>
+    <script src="lunar_methods.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.5; }
-        textarea { width: 100%; padding: 10px; }
-        button { padding: 10px 15px; }
-        pre { background: #f4f4f4; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-break: break-all; }
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 20px auto; }
+        textarea, pre { width: 100%; padding: 10px; box-sizing: border-box; }
+        button { padding: 10px 15px; margin-top: 10px; }
+        pre { background: #f0f0f0; white-space: pre-wrap; word-wrap: break-word; }
     </style>
 </head>
 <body>
-    <h2>Tạo file .ical từ ngày âm lịch</h2>
+    <h2>Tạo file .ical từ ngày Âm lịch</h2>
 
-    <label><b>Nhập sự kiện (âm lịch):</b></label><br>
     <textarea id="input" rows="8">#5
 10/03: Giỗ tổ Hùng Vương
 23/12: Ông Táo Chầu Trời
-e/12: Giao thừa</textarea><br><br>
+e/12: Giao thừa</textarea><br>
 
-    <button onclick="generateICS()">Tạo file .ical</button>
+    <button onclick="generateICAL()">Tạo file .ical</button>
 
     <h3>Kết quả (.ical):</h3>
     <pre id="output"></pre>
@@ -31,48 +30,96 @@ e/12: Giao thừa</textarea><br><br>
             let numYears = parseInt(lines.shift().substring(1));
             numYears = Math.max(2, Math.min(numYears, 20));
 
-            const events = lines.map(line => {
-                const [date, title] = line.split(':');
-                const [day, month] = date.trim().split('/');
-                return { day: day.trim(), month: parseInt(month), title: title.trim() };
-            });
-
-            return { numYears, events };
+            return {
+                numYears,
+                events: lines.map(line => {
+                    const [date, title] = line.split(':');
+                    const [day, month] = date.trim().split('/');
+                    return { day: day.trim(), month: parseInt(month), title: title.trim() };
+                })
+            };
         }
 
-        function lunarToSolar(year, month, day) {
-            const solar = Lunar.fromYmd(year, month, day).getSolar();
-            return { year: solar.getYear(), month: solar.getMonth(), day: solar.getDay() };
+        function getLastDayOfLunarMonth(year, month) {
+            let nextMonthSolar = lunarToSolar(1, month % 12 + 1, year, 0);
+            let lastDaySolar = new Date(nextMonthSolar.year, nextMonthSolar.month - 1, nextMonthSolar.day - 1);
+            let lunarLastDay = solarToLunar(lastDaySolar.getDate(), lastDaySolar.getMonth() + 1, lastDaySolar.getFullYear());
+            return lunarLastDay.day;
         }
 
-        function getLastLunarDay(year, month) {
-            return Lunar.fromYm(year, month).getDayCount();
+        function pad(n) {
+            return n < 10 ? '0' + n : n;
         }
 
-        function generateICS() {
+        function generateICAL() {
             const input = document.getElementById('input').value;
             const { numYears, events } = parseInput(input);
-            const now = new Date();
+            const currentYear = new Date().getFullYear();
             let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nCALSCALE:GREGORIAN\r\n";
 
             for (let i = 0; i < numYears; i++) {
-                const year = now.getFullYear() + i;
+                const year = currentYear + i;
 
                 events.forEach(event => {
-                    const lunarDay = event.day === 'e' ? getLastLunarDay(year, event.month) : parseInt(event.day);
-                    const solar = lunarToSolar(year, event.month, lunarDay);
-                    const dateString = `${solar.year}${String(solar.month).padStart(2,'0')}${String(solar.day).padStart(2,'0')}`;
+                    let lunarDay = event.day;
+                    if (event.day.toLowerCase() === 'e') {
+                        lunarDay = getLastDayOfLunarMonth(year, event.month);
+                    } else {
+                        lunarDay = parseInt(event.day);
+                    }
 
-                    ics += `BEGIN:VEVENT\r\n`;
+                    const solar = lunarToSolar(lunarDay, event.month, year);
+                    const dateString = `${solar.year}${pad(solar.month)}${pad(solar.day)}`;
+
+                    ics += "BEGIN:VEVENT\r\n";
                     ics += `SUMMARY:${event.title}\r\n`;
                     ics += `DTSTART;VALUE=DATE:${dateString}\r\n`;
                     ics += `DTEND;VALUE=DATE:${dateString}\r\n`;
-                    ics += `END:VEVENT\r\n`;
+                    ics += "END:VEVENT\r\n";
                 });
             }
 
             ics += "END:VCALENDAR";
             document.getElementById('output').innerText = ics;
+        }
+
+        // Thêm hàm chuyển đổi dương sang âm để tính ngày cuối tháng âm lịch
+        function solarToLunar(D, M, Y) {
+            const ly = getLunarYear(Y);
+            let jdToday = LocalToJD(D, M, Y);
+            let jdMonth11 = LocalToJD(ly[ly.length - 1].day, ly[ly.length - 1].monthSolar, ly[ly.length - 1].yearSolar);
+            let lunarYear = jdToday >= jdMonth11 ? getLunarYear(Y + 1) : ly;
+
+            let i = lunarYear.length - 1;
+            while (jdToday < LocalToJD(lunarYear[i].day, lunarYear[i].monthSolar, lunarYear[i].yearSolar)) {
+                i--;
+            }
+
+            let day = jdToday - LocalToJD(lunarYear[i].day, lunarYear[i].monthSolar, lunarYear[i].yearSolar) + 1;
+            let month = lunarYear[i].month;
+            let year = month >= 11 ? Y - 1 : Y;
+            return { day, month, year };
+        }
+
+        // Cần implement getLunarYear đầy đủ (đã có trong lunar_methods.js nếu đầy đủ)
+        function getLunarYear(year) {
+            let months = [];
+            let month11 = LunarMonth11(year - 1);
+            let jdMonth11 = LocalToJD(month11.day, month11.month, month11.year);
+            let k = INT(0.5 + (jdMonth11 - 2415021.076998695) / 29.530588853);
+
+            for (let i = 0; i <= 14; i++) {
+                let nm = NewMoon(k + i);
+                let solarDate = LocalFromJD(nm);
+                months.push({
+                    day: solarDate.day,
+                    monthSolar: solarDate.month,
+                    yearSolar: solarDate.year,
+                    month: MOD(i + 11, 12),
+                    leap: 0
+                });
+            }
+            return months;
         }
     </script>
 </body>
