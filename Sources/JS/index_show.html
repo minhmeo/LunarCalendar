@@ -40,8 +40,17 @@ function lunar2solar(year,month,day){
     return{year:solar.getYear(),month:solar.getMonth(),day:solar.getDay()};
 }
 
-function getLastLunarDay(year,month){
-    return Lunar.fromYm(year,month).getDayCount();
+function getLastLunarDay(year, month) {
+    let day = 30;
+    while(day >= 29) {
+        try {
+            Lunar.fromYmd(year, month, day);
+            return day;
+        } catch {
+            day--;
+        }
+    }
+    return 29;
 }
 
 function generateICAL(){
