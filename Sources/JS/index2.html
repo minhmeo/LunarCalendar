@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Lunar to Calendar (.ics)</title>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.min.js"></script>
+</head>
+<body>
+    <h2>Tạo file lịch từ ngày Âm lịch</h2>
+    <textarea id="input" cols="50" rows="10">#5
+    1/1: Tết Nguyên Đán
+    2/1: Mùng 2 Tết
+    3/1: Mùng 3 Tết
+    4/1: Mùng 4 Tết
+    15/1: Rằm Tháng Giêng
+    15/4: Lễ Phật Đản
+    5/5: Tết Đoan Ngọ
+    15/7: Lễ Vu Lan
+    15/8: Tết Trung Thu
+    10/03: Giỗ tổ Hùng Vương
+    23/12: Ông Táo Chầu Trời
+    e/12: Giao thừa
+    </textarea>
+  <br>
+    <button onclick="generateICS()">Tạo lịch (.ics)</button>
+    <script>
+        function download(filename, content) {
+            const a = document.createElement('a');
+            a.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(content);
+            a.download = filename;
+            a.click();
+        }
+
+        function parseInput(inputText) {
+            const lines = inputText.trim().split('\n');
+            let num_years = parseInt(lines.shift().substring(1));
+            num_years = Math.max(2, Math.min(num_years, 20));
+
+            const events = lines.map(line => {
+                const [date, title] = line.split(':');
+                const [day, month] = date.trim().split('/');
+                return { day: day.trim(), month: parseInt(month), title: title.trim() };
+            });
+
+            return { num_years, events };
+        }
+
+        function lunar2solar(year, month, day) {
+            const solar = Lunar.fromYmd(year, month, day).getSolar();
+            return { year: solar.getYear(), month: solar.getMonth(), day: solar.getDay() };
+        }
+
+        function getLastLunarDayOfMonth(year, month) {
+            return Lunar.fromYm(year, month).getDayCount();
+        }
+
+        function generateICS() {
+            const inputText = document.getElementById('input').value;
+            const { num_years, events } = parseInput(inputText);
+            const now = new Date();
+            let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nCALSCALE:GREGORIAN\r\n";
+
+            for (let i = 0; i < num_years; i++) {
+                const year = now.getFullYear() + i;
+
+                events.forEach(ev => {
+                    const lunarDay = ev.day === 'e' ? getLastLunarDayOfMonth(year, ev.month) : parseInt(ev.day);
+                    const solarDate = lunar2solar(year, ev.month, lunarDay);
+                    const dateStr = `${solarDate.year}${String(solarDate.month).padStart(2,'0')}${String(solarDate.day).padStart(2,'0')}`;
+
+                    icsContent += `BEGIN:VEVENT\r\n`;
+                    icsContent += `SUMMARY:${ev.title}\r\n`;
+                    icsContent += `DTSTART;VALUE=DATE:${dateStr}\r\n`;
+                    icsContent += `DTEND;VALUE=DATE:${dateStr}\r\n`;
+                    icsContent += `END:VEVENT\r\n`;
+                });
+            }
+
+            icsContent += "END:VCALENDAR";
+            download('lunar_events.ics', icsContent);
+        }
+    </script>
+</body>
+</html>
