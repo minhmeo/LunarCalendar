@@ -4,9 +4,9 @@
 -  Origin Code: C#
 -  Origin Date: 2012
 -  Purpose: Personal
-
 - This project is to create the repeat events based on Lunar Calendar and can easily import back to Google Calendar
 - Dự án nhỏ này cho phép bạn liệt kê 1 loạt các sự kiện theo lịch âm, ứng dụng sẽ tự động tính toán ngày dương lịch tương ứng và tạo các event nhắc nhở cho các năm tiếp theo, xuất ra dưới dạng file text có thể import vào Google Calendar để nhắc nhở các sự kiện quan trọng như các ngày Lễ, Tết, các ngày giỗ, sinh nhật theo lịch âm.
+- Để nhanh chóng, bạn có thể sử dụng [file này](Sources/JS/index_show.html) `/Sources/JS/index_show.html` lưu về máy và chạy, ứng dụng sẽ sinh ra nội dung `iCal` trên giao diện, bạn chỉ cần copy và paste vào file text có đuôi .ical sau đó upload lên Google
 
 ## Format file input:
 ```text
