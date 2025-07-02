@@ -19,11 +19,11 @@ dd/MM: Event title
 dd/MM: Event title
 
 # Giải thích
-	•n: số năm sự kiện lặp (tối thiểu 2, tối đa 20 năm).
-	•	dd: ngày âm lịch (01–30), riêng ký tự đặc biệt e là ngày cuối tháng.
-	•	MM: tháng âm lịch (01–12).
+- n: số năm sự kiện lặp (tối thiểu 2, tối đa 20 năm).
+- dd: ngày âm lịch (01–30), riêng ký tự đặc biệt e là ngày cuối tháng.
+- MM: tháng âm lịch (01–12).
 
-# Ví dụ và biến đặc biệt
+## 🎯 Ví dụ minh họa và biến đặc biệt
 #5
 10/03: Giỗ tổ Hùng Vương
 23/12: Ông Táo Chầu Trời
@@ -59,6 +59,13 @@ DTSTART;VALUE=DATE:yyyymmdd
 DTEND;VALUE=DATE:yyyymmdd
 END:VEVENT
 END:VCALENDAR
+
+## 🚩 Quy trình tổng thể
+Input (text file)
+→ processString.cs
+→ LunarMethods.cs
+→ ExportAD.cs
+→ output.ical
 
 ## 📚 Tài liệu và nguồn tham khảo liên quan
 - [Thuật toán lịch Âm-Dương Việt Nam](https://www.informatik.uni-leipzig.de/~duc/amlich/calrules.html)
